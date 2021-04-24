@@ -1,6 +1,6 @@
 {
     "name": "memzip",
-    "version": "0.0.3",
+    "version": "0.0.9",
     "main": "src/index.js",
     "author": "Fabio Gianzanti <pardal@hotmail.com>",
     "license": "MIT",
@@ -28,5 +28,9 @@
         "eslint-plugin-import": "^2.22.1",
         "eslint-plugin-prettier": "^3.4.0",
         "prettier": "^2.2.1"
+    },
+    "dependencies": {
+        "buffer": "^6.0.3",
+        "is-buffer": "^2.0.5"
     }
 }

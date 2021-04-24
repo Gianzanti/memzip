@@ -1,33 +1,43 @@
-module.exports = function (/*Buffer*/ inbuf) {
-    var zlib = require("zlib");
+// const { Buffer } = require('buffer/')
+const zlib = require("zlib");
 
-    var opts = { chunkSize: (parseInt(inbuf.length / 1024) + 1) * 1024 };
+const deflate = (/* Buffer */ inbuf) => {
+    const opts = { chunkSize: (parseInt(inbuf.length / 1024, 10) + 1) * 1024 };
+    return zlib.deflateRawSync(inbuf, opts);
+}
 
-    return {
-        deflate: function () {
-            return zlib.deflateRawSync(inbuf, opts);
-        },
+module.exports = { deflate }
 
-        deflateAsync: function (/*Function*/ callback) {
-            var tmp = zlib.createDeflateRaw(opts),
-                parts = [],
-                total = 0;
-            tmp.on("data", function (data) {
-                parts.push(data);
-                total += data.length;
-            });
-            tmp.on("end", function () {
-                var buf = Buffer.alloc(total),
-                    written = 0;
-                buf.fill(0);
-                for (var i = 0; i < parts.length; i++) {
-                    var part = parts[i];
-                    part.copy(buf, written);
-                    written += part.length;
-                }
-                callback && callback(buf);
-            });
-            tmp.end(inbuf);
-        }
-    };
-};
+
+// module.exports = function (/* Buffer */ inbuf) {
+
+//     const opts = { chunkSize: (parseInt(inbuf.length / 1024) + 1) * 1024 };
+
+//     return {
+//         deflate () {
+//             return zlib.deflateRawSync(inbuf, opts);
+//         },
+
+//         deflateAsync (/* Function */ callback) {
+//             const tmp = zlib.createDeflateRaw(opts);
+//                 const parts = [];
+//                 let total = 0;
+//             tmp.on("data", (data) => {
+//                 parts.push(data);
+//                 total += data.length;
+//             });
+//             tmp.on("end", () => {
+//                 const buf = Buffer.alloc(total);
+//                     let written = 0;
+//                 buf.fill(0);
+//                 for (let i = 0; i < parts.length; i++) {
+//                     const part = parts[i];
+//                     part.copy(buf, written);
+//                     written += part.length;
+//                 }
+//                 callback && callback(buf);
+//             });
+//             tmp.end(inbuf);
+//         }
+//     };
+// };

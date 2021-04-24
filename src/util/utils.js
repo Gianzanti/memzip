@@ -1,3 +1,5 @@
+const { Buffer } = require('buffer/')
+const isBuffer = require('is-buffer')
 const pth = require("path");
 
 const isWin = typeof process === "object" && process.platform === "win32";
@@ -61,9 +63,9 @@ module.exports = (function () {
     }
 
     return {
-        makeDir (/* String */ path) {
-            mkdirSync(path);
-        },
+        // makeDir (/* String */ path) {
+        //     mkdirSync(path);
+        // },
 
         crc32 (buf) {
             if (typeof buf === "string") {
@@ -182,7 +184,7 @@ module.exports = (function () {
         setAttributes (/* String */ path) {},
 
         toBuffer (input) {
-            if (Buffer.isBuffer(input)) {
+            if (isBuffer(input)) {
                 return input;
             } 
                 if (input.length === 0) {

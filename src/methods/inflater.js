@@ -1,31 +1,36 @@
-module.exports = function (/*Buffer*/ inbuf) {
-    var zlib = require("zlib");
+// const { Buffer } = require('buffer/')
+const zlib = require("zlib");
 
-    return {
-        inflate: function () {
-            return zlib.inflateRawSync(inbuf);
-        },
+const inflate = (/* Buffer */ inbuf) => zlib.inflateRawSync(inbuf)
 
-        inflateAsync: function (/*Function*/ callback) {
-            var tmp = zlib.createInflateRaw(),
-                parts = [],
-                total = 0;
-            tmp.on("data", function (data) {
-                parts.push(data);
-                total += data.length;
-            });
-            tmp.on("end", function () {
-                var buf = Buffer.alloc(total),
-                    written = 0;
-                buf.fill(0);
-                for (var i = 0; i < parts.length; i++) {
-                    var part = parts[i];
-                    part.copy(buf, written);
-                    written += part.length;
-                }
-                callback && callback(buf);
-            });
-            tmp.end(inbuf);
-        }
-    };
-};
+module.exports = { inflate }
+
+// module.exports = function (/* Buffer */ inbuf) {
+//     return {
+//         inflate () {
+//             return zlib.inflateRawSync(inbuf);
+//         },
+
+//         inflateAsync (/* Function */ callback) {
+//             const tmp = zlib.createInflateRaw();
+//                 const parts = [];
+//                 let total = 0;
+//             tmp.on("data", (data) => {
+//                 parts.push(data);
+//                 total += data.length;
+//             });
+//             tmp.on("end", () => {
+//                 const buf = Buffer.alloc(total);
+//                     let written = 0;
+//                 buf.fill(0);
+//                 for (let i = 0; i < parts.length; i++) {
+//                     const part = parts[i];
+//                     part.copy(buf, written);
+//                     written += part.length;
+//                 }
+//                 callback && callback(buf);
+//             });
+//             tmp.end(inbuf);
+//         }
+//     };
+// };

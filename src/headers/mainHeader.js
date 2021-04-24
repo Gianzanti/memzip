@@ -1,47 +1,49 @@
-var Utils = require("../util"),
-    Constants = Utils.Constants;
+const { Buffer } = require('buffer/')
+const Utils = require("../util");
+
+    const {Constants} = Utils;
 
 /* The entries in the end of central directory */
 module.exports = function () {
-    var _volumeEntries = 0,
-        _totalEntries = 0,
-        _size = 0,
-        _offset = 0,
-        _commentLength = 0;
+    let _volumeEntries = 0;
+        let _totalEntries = 0;
+        let _size = 0;
+        let _offset = 0;
+        let _commentLength = 0;
 
     return {
         get diskEntries() {
             return _volumeEntries;
         },
-        set diskEntries(/*Number*/ val) {
+        set diskEntries(/* Number */ val) {
             _volumeEntries = _totalEntries = val;
         },
 
         get totalEntries() {
             return _totalEntries;
         },
-        set totalEntries(/*Number*/ val) {
+        set totalEntries(/* Number */ val) {
             _totalEntries = _volumeEntries = val;
         },
 
         get size() {
             return _size;
         },
-        set size(/*Number*/ val) {
+        set size(/* Number */ val) {
             _size = val;
         },
 
         get offset() {
             return _offset;
         },
-        set offset(/*Number*/ val) {
+        set offset(/* Number */ val) {
             _offset = val;
         },
 
         get commentLength() {
             return _commentLength;
         },
-        set commentLength(/*Number*/ val) {
+        set commentLength(/* Number */ val) {
             _commentLength = val;
         },
 
@@ -49,7 +51,7 @@ module.exports = function () {
             return Constants.ENDHDR + _commentLength;
         },
 
-        loadFromBinary: function (/*Buffer*/ data) {
+        loadFromBinary (/* Buffer */ data) {
             // data should be 22 bytes and start with "PK 05 06"
             // or be 56+ bytes and start with "PK 06 06" for Zip64
             if (
@@ -84,8 +86,8 @@ module.exports = function () {
             }
         },
 
-        toBinary: function () {
-            var b = Buffer.alloc(Constants.ENDHDR + _commentLength);
+        toBinary () {
+            const b = Buffer.alloc(Constants.ENDHDR + _commentLength);
             // "PK 05 06" signature
             b.writeUInt32LE(Constants.ENDSIG, 0);
             b.writeUInt32LE(0, 4);
@@ -105,24 +107,24 @@ module.exports = function () {
             return b;
         },
 
-        toJSON: function () {
+        toJSON () {
             // creates 0x0000 style output
             const offset = function (nr, len) {
                 let offs = nr.toString(16).toUpperCase();
-                while (offs.length < len) offs = "0" + offs;
-                return "0x" + offs;
+                while (offs.length < len) offs = `0${  offs}`;
+                return `0x${  offs}`;
             };
 
             return {
                 diskEntries: _volumeEntries,
                 totalEntries: _totalEntries,
-                size: _size + " bytes",
+                size: `${_size  } bytes`,
                 offset: offset(_offset, 4),
                 commentLength: _commentLength
             };
         },
 
-        toString: function () {
+        toString () {
             return JSON.stringify(this.toJSON(), null, "\t");
         }
     };

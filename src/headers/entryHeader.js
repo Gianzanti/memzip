@@ -1,3 +1,4 @@
+const { Buffer } = require('buffer/')
 var Utils = require("../util"),
     Constants = Utils.Constants;
 

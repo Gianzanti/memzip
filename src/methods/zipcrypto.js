@@ -1,4 +1,5 @@
-
+const { Buffer } = require('buffer/')
+const isBuffer = require('is-buffer')
 
 // node crypt, we use it for generate salt
 // eslint-disable-next-line node/no-unsupported-features/node-builtins
@@ -48,7 +49,7 @@ const config = {
 
 // Class Initkeys handles same basic ops with keys
 function Initkeys(pw) {
-    const pass = Buffer.isBuffer(pw) ? pw : Buffer.from(pw);
+    const pass = isBuffer(pw) ? pw : Buffer.from(pw);
     this.keys = new Uint32Array([0x12345678, 0x23456789, 0x34567890]);
     for (let i = 0; i < pass.length; i++) {
         this.updateKeys(pass[i]);
@@ -107,7 +108,7 @@ function make_encrypter(/* Buffer */ pwd) {
 }
 
 function decrypt(/* Buffer */ data, /* Object */ header, /* String, Buffer */ pwd) {
-    if (!data || !Buffer.isBuffer(data) || data.length < 12) {
+    if (!data || !isBuffer(data) || data.length < 12) {
         return Buffer.alloc(0);
     }
 
@@ -128,7 +129,7 @@ function decrypt(/* Buffer */ data, /* Object */ header, /* String, Buffer */ pw
 
 // lets add way to populate salt, NOT RECOMMENDED for production but maybe useful for testing general functionality
 function _salter(data) {
-    if (Buffer.isBuffer(data) && data.length >= 12) {
+    if (isBuffer(data) && data.length >= 12) {
         // be aware - currently salting buffer data is modified
         config.genSalt = function () {
             return data.slice(0, 12);
@@ -146,7 +147,7 @@ function encrypt(/* Buffer */ data, /* Object */ header, /* String, Buffer */ pw
     // 1. test data if data is not Buffer we make buffer from it
     if (data == null) data = Buffer.alloc(0);
     // if data is not buffer be make buffer from it
-    if (!Buffer.isBuffer(data)) data = Buffer.from(data.toString());
+    if (!isBuffer(data)) data = Buffer.from(data.toString());
 
     // 2. We Initialize and generate encrypting function
     const encrypter = make_encrypter(pwd);

@@ -1,18 +1,22 @@
-var Utils = require("./util"),
-    Headers = require("./headers"),
-    Constants = Utils.Constants,
-    Methods = require("./methods");
+/* eslint-disable no-case-declarations */
+const { Buffer } = require('buffer/')
+const isBuffer = require('is-buffer')
+const Utils = require("./util");
+const Headers = require("./headers");
 
-module.exports = function (/*Buffer*/ input) {
-    var _entryHeader = new Headers.EntryHeader(),
-        _entryName = Buffer.alloc(0),
-        _comment = Buffer.alloc(0),
-        _isDirectory = false,
-        uncompressedData = null,
-        _extra = Buffer.alloc(0);
+const {Constants} = Utils;
+const Methods = require("./methods");
+
+module.exports = function (/* Buffer */ input) {
+    const _entryHeader = new Headers.EntryHeader();
+        let _entryName = Buffer.alloc(0);
+        let _comment = Buffer.alloc(0);
+        let _isDirectory = false;
+        let uncompressedData = null;
+        let _extra = Buffer.alloc(0);
 
     function getCompressedDataFromZip() {
-        if (!input || !Buffer.isBuffer(input)) {
+        if (!input || !isBuffer(input)) {
             return Buffer.alloc(0);
         }
         _entryHeader.loadDataHeaderFromBinary(input);
@@ -33,19 +37,19 @@ module.exports = function (/*Buffer*/ input) {
         return true;
     }
 
-    function decompress(/*Boolean*/ async, /*Function*/ callback, /*String, Buffer*/ pass) {
+    function decompress(/* Boolean */ async, /* Function */ callback, /* String, Buffer */ pass) {
         if (typeof callback === "undefined" && typeof async === "string") {
             pass = async;
             async = void 0;
         }
         if (_isDirectory) {
             if (async && callback) {
-                callback(Buffer.alloc(0), Utils.Errors.DIRECTORY_CONTENT_ERROR); //si added error.
+                callback(Buffer.alloc(0), Utils.Errors.DIRECTORY_CONTENT_ERROR); // si added error.
             }
             return Buffer.alloc(0);
         }
 
-        var compressedData = getCompressedDataFromZip();
+        let compressedData = getCompressedDataFromZip();
 
         if (compressedData.length === 0) {
             // File is empty, nothing to decompress.
@@ -54,62 +58,62 @@ module.exports = function (/*Buffer*/ input) {
         }
 
         if (_entryHeader.encripted) {
-            if ("string" !== typeof pass && !Buffer.isBuffer(pass)) {
+            if (typeof pass !== "string" && !isBuffer(pass)) {
                 throw new Error("ADM-ZIP: Incompatible password parameter");
             }
             compressedData = Methods.ZipCrypto.decrypt(compressedData, _entryHeader, pass);
         }
 
-        var data = Buffer.alloc(_entryHeader.size);
+        const data = Buffer.alloc(_entryHeader.size);
 
         switch (_entryHeader.method) {
             case Utils.Constants.STORED:
                 compressedData.copy(data);
                 if (!crc32OK(data)) {
-                    if (async && callback) callback(data, Utils.Errors.BAD_CRC); //si added error
+                    if (async && callback) callback(data, Utils.Errors.BAD_CRC); // si added error
                     throw new Error(Utils.Errors.BAD_CRC);
                 } else {
-                    //si added otherwise did not seem to return data.
+                    // si added otherwise did not seem to return data.
                     if (async && callback) callback(data);
                     return data;
                 }
             case Utils.Constants.DEFLATED:
-                var inflater = new Methods.Inflater(compressedData);
-                if (!async) {
-                    const result = inflater.inflate(data);
+                // var inflater = new Methods.Inflater(compressedData);
+                // if (!async) {
+                    const result = Methods.Inflater.inflate(data);
                     result.copy(data, 0);
                     if (!crc32OK(data)) {
-                        throw new Error(Utils.Errors.BAD_CRC + " " + _entryName.toString());
+                        throw new Error(`${Utils.Errors.BAD_CRC  } ${  _entryName.toString()}`);
                     }
                     return data;
-                } else {
-                    inflater.inflateAsync(function (result) {
-                        result.copy(result, 0);
-                        if (callback) {
-                            if (!crc32OK(result)) {
-                                callback(result, Utils.Errors.BAD_CRC); //si added error
-                            } else {
-                                callback(result);
-                            }
-                        }
-                    });
-                }
-                break;
+                // } 
+                //     inflater.inflateAsync((result) => {
+                //         result.copy(result, 0);
+                //         if (callback) {
+                //             if (!crc32OK(result)) {
+                //                 callback(result, Utils.Errors.BAD_CRC); // si added error
+                //             } else {
+                //                 callback(result);
+                //             }
+                //         }
+                //     });
+                
+                // break;
             default:
                 if (async && callback) callback(Buffer.alloc(0), Utils.Errors.UNKNOWN_METHOD);
                 throw new Error(Utils.Errors.UNKNOWN_METHOD);
         }
     }
 
-    function compress(/*Boolean*/ async, /*Function*/ callback) {
-        if ((!uncompressedData || !uncompressedData.length) && Buffer.isBuffer(input)) {
+    function compress(/* Boolean */ async, /* Function */ callback) {
+        if ((!uncompressedData || !uncompressedData.length) && isBuffer(input)) {
             // no data set or the data wasn't changed to require recompression
             if (async && callback) callback(getCompressedDataFromZip());
             return getCompressedDataFromZip();
         }
 
         if (uncompressedData.length && !_isDirectory) {
-            var compressedData;
+            let compressedData;
             // Local file header
             switch (_entryHeader.method) {
                 case Utils.Constants.STORED:
@@ -122,21 +126,21 @@ module.exports = function (/*Buffer*/ input) {
                     return compressedData;
                 default:
                 case Utils.Constants.DEFLATED:
-                    var deflater = new Methods.Deflater(uncompressedData);
-                    if (!async) {
-                        var deflated = deflater.deflate();
-                        _entryHeader.compressedSize = deflated.length;
-                        return deflated;
-                    } else {
-                        deflater.deflateAsync(function (data) {
-                            compressedData = Buffer.alloc(data.length);
-                            _entryHeader.compressedSize = data.length;
-                            data.copy(compressedData);
-                            callback && callback(compressedData);
-                        });
-                    }
-                    deflater = null;
-                    break;
+                    // var deflater = new Methods.Deflater(uncompressedData);
+                    // if (!async) {
+                    const deflated = Methods.Deflater.deflate(uncompressedData);
+                    _entryHeader.compressedSize = deflated.length;
+                    return deflated;
+                    // } 
+                    //     deflater.deflateAsync((data) => {
+                    //         compressedData = Buffer.alloc(data.length);
+                    //         _entryHeader.compressedSize = data.length;
+                    //         data.copy(compressedData);
+                    //         callback && callback(compressedData);
+                    //     });
+                    
+                    // deflater = null;
+                    // break;
             }
         } else if (async && callback) {
             callback(Buffer.alloc(0));
@@ -150,8 +154,8 @@ module.exports = function (/*Buffer*/ input) {
     }
 
     function parseExtra(data) {
-        var offset = 0;
-        var signature, size, part;
+        let offset = 0;
+        let signature; let size; let part;
         while (offset < data.length) {
             signature = data.readUInt16LE(offset);
             offset += 2;
@@ -165,9 +169,9 @@ module.exports = function (/*Buffer*/ input) {
         }
     }
 
-    //Override header field values with values from the ZIP64 extra field
+    // Override header field values with values from the ZIP64 extra field
     function parseZip64ExtendedInformation(data) {
-        var size, compressedSize, offset, diskNumStart;
+        let size; let compressedSize; let offset; let diskNumStart;
 
         if (data.length >= Constants.EF_ZIP64_SCOMP) {
             size = readUInt64LE(data, Constants.EF_ZIP64_SUNCOMP);
@@ -204,7 +208,7 @@ module.exports = function (/*Buffer*/ input) {
         },
         set entryName(val) {
             _entryName = Utils.toBuffer(val);
-            var lastChar = _entryName[_entryName.length - 1];
+            const lastChar = _entryName[_entryName.length - 1];
             _isDirectory = lastChar === 47 || lastChar === 92;
             _entryHeader.fileNameLength = _entryName.length;
         },
@@ -227,7 +231,7 @@ module.exports = function (/*Buffer*/ input) {
         },
 
         get name() {
-            var n = _entryName.toString();
+            const n = _entryName.toString();
             return _isDirectory
                 ? n
                       .substr(n.length - 1)
@@ -239,15 +243,15 @@ module.exports = function (/*Buffer*/ input) {
             return _isDirectory;
         },
 
-        getCompressedData: function () {
+        getCompressedData () {
             return compress(false, null);
         },
 
-        getCompressedDataAsync: function (/*Function*/ callback) {
+        getCompressedDataAsync (/* Function */ callback) {
             compress(true, callback);
         },
 
-        setData: function (value) {
+        setData (value) {
             uncompressedData = Utils.toBuffer(value);
             if (!_isDirectory && uncompressedData.length) {
                 _entryHeader.size = uncompressedData.length;
@@ -260,15 +264,15 @@ module.exports = function (/*Buffer*/ input) {
             }
         },
 
-        getData: function (pass) {
+        getData (pass) {
             if (_entryHeader.changed) {
                 return uncompressedData;
-            } else {
+            } 
                 return decompress(false, null, pass);
-            }
+            
         },
 
-        getDataAsync: function (/*Function*/ callback, pass) {
+        getDataAsync (/* Function */ callback, pass) {
             if (_entryHeader.changed) {
                 callback(uncompressedData);
             } else {
@@ -283,7 +287,7 @@ module.exports = function (/*Buffer*/ input) {
             return _entryHeader.attr;
         },
 
-        set header(/*Buffer*/ data) {
+        set header(/* Buffer */ data) {
             _entryHeader.loadFromBinary(data);
         },
 
@@ -291,10 +295,10 @@ module.exports = function (/*Buffer*/ input) {
             return _entryHeader;
         },
 
-        packHeader: function () {
+        packHeader () {
             // 1. create header (buffer)
-            var header = _entryHeader.entryHeaderToBinary();
-            var addpos = Utils.Constants.CENHDR;
+            const header = _entryHeader.entryHeaderToBinary();
+            let addpos = Utils.Constants.CENHDR;
             // 2. add file name
             _entryName.copy(header, addpos);
             addpos += _entryName.length;
@@ -310,9 +314,9 @@ module.exports = function (/*Buffer*/ input) {
             return header;
         },
 
-        toJSON: function () {
+        toJSON () {
             const bytes = function (nr) {
-                return "<" + ((nr && nr.length + " bytes buffer") || "null") + ">";
+                return `<${  (nr && `${nr.length  } bytes buffer`) || "null"  }>`;
             };
 
             return {
@@ -326,7 +330,7 @@ module.exports = function (/*Buffer*/ input) {
             };
         },
 
-        toString: function () {
+        toString () {
             return JSON.stringify(this.toJSON(), null, "\t");
         }
     };
