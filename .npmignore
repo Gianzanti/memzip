@@ -1,2 +1,6 @@
 src/test/
 src/testing/
+.editorconfig
+.eslintrc.json
+.eslintignore
+.prettierrc

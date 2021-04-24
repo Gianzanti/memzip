@@ -1,13 +1,14 @@
-"use strict";
+
 
 // node crypt, we use it for generate salt
 // eslint-disable-next-line node/no-unsupported-features/node-builtins
-const { randomFillSync } = require("crypto");
+// const { randomFillSync } = require("crypto");
+const crypto = require("crypto");
 
 // generate CRC32 lookup table
 const crctable = new Uint32Array(256).map((t, crc) => {
     for (let j = 0; j < 8; j++) {
-        if (0 !== (crc & 1)) {
+        if ((crc & 1) !== 0) {
             crc = (crc >>> 1) ^ 0xedb88320;
         } else {
             crc >>>= 1;
@@ -20,19 +21,17 @@ const crctable = new Uint32Array(256).map((t, crc) => {
 const uMul = (a, b) => Math.imul(a, b) >>> 0;
 
 // crc32 byte single update (actually same function is part of utils.crc32 function :) )
-const crc32update = (pCrc32, bval) => {
-    return crctable[(pCrc32 ^ bval) & 0xff] ^ (pCrc32 >>> 8);
-};
+const crc32update = (pCrc32, bval) => crctable[(pCrc32 ^ bval) & 0xff] ^ (pCrc32 >>> 8);
 
 // function for generating salt for encrytion header
-const genSalt = () => {
-    if ("function" === typeof randomFillSync) {
-        return randomFillSync(Buffer.alloc(12));
-    } else {
-        // fallback if function is not defined
-        return genSalt.node();
-    }
-};
+const genSalt = () => 
+    // if ("function" === typeof randomFillSync) {
+         crypto.randomFillSync(Buffer.alloc(12))
+    // } else {
+    //     // fallback if function is not defined
+    //     return genSalt.node();
+    // }
+;
 
 // salt generation with node random function (mainly as fallback)
 genSalt.node = () => {
@@ -57,7 +56,7 @@ function Initkeys(pw) {
 }
 
 Initkeys.prototype.updateKeys = function (byteValue) {
-    const keys = this.keys;
+    const {keys} = this;
     keys[0] = crc32update(keys[0], byteValue);
     keys[1] += keys[0] & 0xff;
     keys[1] = uMul(keys[1], 134775813) + 1;
@@ -70,35 +69,35 @@ Initkeys.prototype.next = function () {
     return (uMul(k, k ^ 1) >> 8) & 0xff; // decode
 };
 
-function make_decrypter(/*Buffer*/ pwd) {
+function make_decrypter(/* Buffer */ pwd) {
     // 1. Stage initialize key
     const keys = new Initkeys(pwd);
 
     // return decrypter function
-    return function (/*Buffer*/ data) {
+    return function (/* Buffer */ data) {
         // result - we create new Buffer for results
         const result = Buffer.alloc(data.length);
         let pos = 0;
         // process input data
-        for (let c of data) {
-            //c ^= keys.next();
-            //result[pos++] = c; // decode & Save Value
+        for (const c of data) {
+            // c ^= keys.next();
+            // result[pos++] = c; // decode & Save Value
             result[pos++] = keys.updateKeys(c ^ keys.next()); // update keys with decoded byte
         }
         return result;
     };
 }
 
-function make_encrypter(/*Buffer*/ pwd) {
+function make_encrypter(/* Buffer */ pwd) {
     // 1. Stage initialize key
     const keys = new Initkeys(pwd);
 
     // return encrypting function, result and pos is here so we dont have to merge buffers later
-    return function (/*Buffer*/ data, /*Buffer*/ result, /* Number */ pos = 0) {
+    return function (/* Buffer */ data, /* Buffer */ result, /* Number */ pos = 0) {
         // result - we create new Buffer for results
         if (!result) result = Buffer.alloc(data.length);
         // process input data
-        for (let c of data) {
+        for (const c of data) {
             const k = keys.next(); // save key byte
             result[pos++] = c ^ k; // save val
             keys.updateKeys(c); // update keys with decoded byte
@@ -107,7 +106,7 @@ function make_encrypter(/*Buffer*/ pwd) {
     };
 }
 
-function decrypt(/*Buffer*/ data, /*Object*/ header, /*String, Buffer*/ pwd) {
+function decrypt(/* Buffer */ data, /* Object */ header, /* String, Buffer */ pwd) {
     if (!data || !Buffer.isBuffer(data) || data.length < 12) {
         return Buffer.alloc(0);
     }
@@ -143,7 +142,7 @@ function _salter(data) {
     }
 }
 
-function encrypt(/*Buffer*/ data, /*Object*/ header, /*String, Buffer*/ pwd, /*Boolean*/ oldlike = false) {
+function encrypt(/* Buffer */ data, /* Object */ header, /* String, Buffer */ pwd, /* Boolean */ oldlike = false) {
     // 1. test data if data is not Buffer we make buffer from it
     if (data == null) data = Buffer.alloc(0);
     // if data is not buffer be make buffer from it

@@ -1,12 +1,11 @@
 const pth = require("path");
 
-const isWin = typeof process === "object" && "win32" === process.platform;
+const isWin = typeof process === "object" && process.platform === "win32";
 
 module.exports = (function () {
-    var crcTable = [],
-        Constants = require("./constants"),
-        Errors = require("./errors"),
-        PATH_SEPARATOR = pth.sep;
+    const crcTable = [];
+        const Constants = require("./constants");
+        const Errors = require("./errors")
 
     function genCRCTable() {
         for (let n = 0; n < 256; n++) {
@@ -15,7 +14,7 @@ module.exports = (function () {
                 if ((c & 1) !== 0) {
                     c = 0xedb88320 ^ (c >>> 1);
                 } else {
-                    c = c >>> 1;
+                    c >>>= 1;
                 }
             crcTable[n] = c >>> 0;
         }
@@ -54,41 +53,41 @@ module.exports = (function () {
     //     return files;
     // }
 
-    function readBigUInt64LE(/*Buffer*/ buffer, /*int*/ index) {
-        var slice = Buffer.from(buffer.slice(index, index + 8));
+    function readBigUInt64LE(/* Buffer */ buffer, /* int */ index) {
+        const slice = Buffer.from(buffer.slice(index, index + 8));
         slice.swap64();
 
         return parseInt(`0x${slice.toString("hex")}`);
     }
 
     return {
-        makeDir: function (/*String*/ path) {
+        makeDir (/* String */ path) {
             mkdirSync(path);
         },
 
-        crc32: function (buf) {
+        crc32 (buf) {
             if (typeof buf === "string") {
                 buf = Buffer.from(buf, "utf8");
             }
             // Generate crcTable
             if (!crcTable.length) genCRCTable();
 
-            var off = 0,
-                len = buf.length,
-                crc = ~0;
+            let off = 0;
+                let len = buf.length;
+                let crc = ~0;
             while (--len >= 0) crc = crcTable[(crc ^ buf[off++]) & 0xff] ^ (crc >>> 8);
             // xor and cast as uint32 number
             return ~crc >>> 0;
         },
 
-        methodToString: function (/*Number*/ method) {
+        methodToString (/* Number */ method) {
             switch (method) {
                 case Constants.STORED:
-                    return "STORED (" + method + ")";
+                    return `STORED (${  method  })`;
                 case Constants.DEFLATED:
-                    return "DEFLATED (" + method + ")";
+                    return `DEFLATED (${  method  })`;
                 default:
-                    return "UNSUPPORTED (" + method + ")";
+                    return `UNSUPPORTED (${  method  })`;
             }
         },
 
@@ -174,30 +173,30 @@ module.exports = (function () {
         //     });
         // },
 
-        findFiles: function (/*String*/ path) {
+        findFiles (/* String */ path) {
             return findSync(path, true);
         },
 
-        getAttributes: function (/*String*/ path) {},
+        getAttributes (/* String */ path) {},
 
-        setAttributes: function (/*String*/ path) {},
+        setAttributes (/* String */ path) {},
 
-        toBuffer: function (input) {
+        toBuffer (input) {
             if (Buffer.isBuffer(input)) {
                 return input;
-            } else {
+            } 
                 if (input.length === 0) {
                     return Buffer.alloc(0);
                 }
                 return Buffer.from(input, "utf8");
-            }
+            
         },
 
         isWin, // Do we have windows system
 
         readBigUInt64LE,
 
-        Constants: Constants,
-        Errors: Errors
+        Constants,
+        Errors
     };
 })();
